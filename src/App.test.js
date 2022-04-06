@@ -1,8 +1,61 @@
-import { render, screen } from '@testing-library/react';
-import App from './App';
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import App, { calcularNovoSaldo } from './App';
 
-test('renders learn react link', () => {
-  render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+describe('Componente principal', () => {
+  describe('Quando eu abro o app do banco', () => {
+    it('Mostrar o nome do banco', () => {
+      render(<App />);
+      expect(screen.getByText('ByteBank')).toBeInTheDocument();
+    });
+  
+    it('Mostrar saldo', () => {
+      render(<App />);
+      expect(screen.getByText('Saldo:')).toBeInTheDocument();
+    });
+  
+    it('Botão de transação é exibido', () => {
+      render(<App />);
+      expect(screen.getByText('Realizar operação')).toBeInTheDocument();
+    });
+  });
+
+  describe('Quando eu realizo uma transação', () => {
+    it('Que é um saque, o valor vai diminuir', () => {
+      const valores = {
+        transacao: 'saque',
+        valor: 50
+      };
+      const novoSaldo = calcularNovoSaldo(valores, 150);
+      expect(novoSaldo).toBe(100);
+    });
+
+    it('Que é um saque, a transação deve ser realizada', () => {
+      render(<App />);
+      const saldo = screen.getByText('R$ 1000');
+      const transacao = screen.getByLabelText('Saque');
+      const valor = screen.getByTestId('valor');
+      const botaoTransacao = screen.getByText('Realizar operação');
+
+      expect(saldo.textContent).toBe('R$ 1000');
+      fireEvent.click(transacao, { target: { value: 'saque' } });
+      fireEvent.change(valor, { target: { value: 10 } });
+      fireEvent.click(botaoTransacao);
+      expect(saldo.textContent).toBe('R$ 990');
+    });
+
+    it('Que é um saque e o valor do saque é maior que o saldo da conta, a transação não deve ser realizada', () => {
+      render(<App />);
+      const saldo = screen.getByText('R$ 1000');
+      const transacao = screen.getByLabelText('Saque');
+      const valor = screen.getByTestId('valor');
+      const botaoTransacao = screen.getByText('Realizar operação');
+
+      expect(saldo.textContent).toBe('R$ 1000');
+      fireEvent.click(transacao, { target: { value: 'saque' } });
+      fireEvent.change(valor, { target: { value: 2000 } });
+      fireEvent.click(botaoTransacao);
+      expect(saldo.textContent).toBe('R$ -1000');
+    });
+  });
 });
